@@ -38,6 +38,8 @@ export default function ImageUploader({ onFileSelected, previewUrl, onClear, onE
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) validateAndSend(f);
+    // Reset input value so selecting the same file again will fire onChange
+    e.target.value = "";
   };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -63,19 +65,41 @@ export default function ImageUploader({ onFileSelected, previewUrl, onClear, onE
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        className={`relative w-full h-full max-w-[520px] max-h-[60vh] ${
-          previewUrl
-            ? "bg-transparent"
-            : "border rounded-md bg-white/50 dark:bg-black/30 flex items-center justify-center transition-all duration-150"
-        } ${isDragOver ? "ring-2 ring-blue-500" : ""}`}
+        className={`relative w-full h-full max-w-[520px] max-h-[60vh] border rounded-md bg-white/50 dark:bg-black/30 flex items-center justify-center transition-all duration-150 ${isDragOver ? "ring-2 ring-blue-500" : ""}`}
       >
         {previewUrl ? (
           <div className="relative w-full h-full flex items-center justify-center">
+            {/* Replace (upload) button - top-left */}
+            <button
+              type="button"
+              aria-label="Replace image"
+              onClick={() => inputRef.current?.click()}
+              className="absolute top-2 left-2 z-10 rounded-full bg-white/90 dark:bg-black/70 border shadow p-1 hover:bg-gray-200 dark:hover:bg-gray-800"
+              style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}
+              title="Upload a different image"
+            >
+              {/* Simple image icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="w-4 h-4"
+              >
+                <rect x="4" y="6" width="16" height="12" rx="2" ry="2" />
+                <circle cx="16" cy="10" r="1.5" />
+                <path d="M6 16l4-4 3 3 4-4 3 3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
             {/* Remove button */}
             {onClear && (
               <button
                 type="button"
-                onClick={onClear}
+                onClick={() => {
+                  onClear?.();
+                  if (inputRef.current) inputRef.current.value = "";
+                }}
                 aria-label="Remove image"
                 className="absolute top-2 right-2 z-10 rounded-full bg-white/90 dark:bg-black/70 border shadow p-1 text-base hover:bg-gray-200 dark:hover:bg-gray-800"
                 style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -87,7 +111,7 @@ export default function ImageUploader({ onFileSelected, previewUrl, onClear, onE
             <img
               src={previewUrl}
               alt="Preview"
-              className="w-full h-full object-contain rounded-md border-2 border-gray-300 dark:border-gray-600 shadow-sm"
+              className="max-w-full max-h-full object-contain rounded-md shadow-sm"
             />
           </div>
         ) : (

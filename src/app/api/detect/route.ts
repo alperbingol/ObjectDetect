@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.HF_API_KEY;
-  console.log(apiKey)
+  
     // Log API key presence (do not log the key itself for security)
     console.log("API key present:", !!apiKey);
     if (!apiKey) {

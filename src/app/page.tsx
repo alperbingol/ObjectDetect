@@ -12,6 +12,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+
+  
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => {
     return () => {
@@ -51,7 +53,12 @@ export default function Home() {
     }
   };
 
-  const handleRemoveImage = () => setFile(null);
+  const handleRemoveImage = () => {
+    setFile(null);
+    setResultUrl(null);
+    setDetections([]);
+    setError(null);
+  };
   const handleResetThreshold = () => setThreshold(0.25);
 
   // Shared panel style
@@ -69,7 +76,13 @@ export default function Home() {
         <section>
           <div className={panelClass} style={panelBoxStyle}>
             <ImageUploader
-              onFileSelected={setFile}
+              onFileSelected={(f) => {
+                setFile(f);
+                // Reset previous detection output when a new image is chosen
+                setResultUrl(null);
+                setDetections([]);
+                setError(null);
+              }}
               previewUrl={previewUrl}
               onClear={handleRemoveImage}
               onError={(msg) => alert(msg)}
@@ -81,22 +94,19 @@ export default function Home() {
               onThresholdChange={setThreshold}
               onDetect={handleDetect}
               onReset={handleResetThreshold}
-              disabled={!file}
+              disabled={!file || loading}
             />
           </div>
         </section>
         {/* Result panel */}
         <section>
-          <div
-            className={
-              resultUrl
-                ? "rounded-md p-2 bg-white/50 dark:bg-black/30 w-full flex items-center justify-center"
-                : panelClass
-            }
-            style={panelBoxStyle}
-          >
-            {resultUrl ? (
-              <DetectionCanvas imageUrl={resultUrl} detections={detections} />
+          <div className={panelClass} style={panelBoxStyle}>
+            {previewUrl ? (
+              <DetectionCanvas
+                imageUrl={resultUrl ?? previewUrl}
+                detections={resultUrl ? detections : []}
+                loading={loading}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center w-full h-full select-none text-gray-400 border rounded-md bg-white/50 dark:bg-black/30">
                 <span>No result yet</span>
