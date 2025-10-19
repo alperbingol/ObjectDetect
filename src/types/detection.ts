@@ -1,5 +1,5 @@
 export type Detection = {
   label: string;
-  score: number; // 0..1 confidence
+  score: number;
   box: { xmin: number; ymin: number; xmax: number; ymax: number };
 };
