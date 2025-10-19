@@ -1,8 +1,7 @@
 "use client";
-import { useId } from "react";
 
 type Props = {
-  threshold: number; // 0..1
+  threshold: number;
   onThresholdChange: (v: number) => void;
   onDetect: () => void;
   onReset?: () => void;
@@ -10,24 +9,26 @@ type Props = {
 };
 
 export default function Controls({ threshold, onThresholdChange, onDetect, onReset, disabled }: Props) {
-  const id = useId();
+  const inputId = "threshold";
+
   return (
     <div className="w-full space-y-4">
       <div className="mb-2">
-        <label htmlFor={id} className="block text-sm font-medium mb-1">Confidence threshold</label>
+        <label htmlFor={inputId} className="block text-sm font-medium mb-1">Confidence threshold</label>
         <div className="flex items-center gap-3">
           <input
-            id={id}
+            id={inputId}
             type="range"
             min={0}
             max={1}
             step={0.01}
             value={threshold}
-            onChange={(e) => onThresholdChange(parseFloat(e.target.value))}
-            className="w-full accent-orange-400 h-2 rounded-lg appearance-none bg-gray-200"
-            style={{ maxWidth: 220 }}
+            onChange={(e) => onThresholdChange(e.currentTarget.valueAsNumber)}
+            className="w-full max-w-[220px] accent-orange-400 h-2 rounded-lg appearance-none bg-gray-200"
           />
-          <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 border text-gray-700">{threshold.toFixed(2)}</span>
+            <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 border text-gray-700">
+              {threshold.toFixed(2)}
+              </span>
         </div>
       </div>
       <div className="flex gap-3 mt-2">

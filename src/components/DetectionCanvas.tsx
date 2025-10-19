@@ -1,129 +1,98 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Detection } from "@/types/detection";
+
+
+const COLORS = ["#F97316", "#10B981", "#3B82F6", "#A855F7", "#E11D48"];
+const hash = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+  return Math.abs(h);
+};
+const colorFor = (label = "") => COLORS[hash(label) % COLORS.length];
 
 type Props = {
   imageUrl?: string | null;
-  detections?: any[];
+  detections: Detection[];
   loading?: boolean;
 };
 
 export default function DetectionCanvas({ imageUrl, detections, loading }: Props) {
-  // Deterministic label->color mapping
-  const palette = [
-    "#EF4444", // red-500
-    "#10B981", // emerald-500
-    "#3B82F6", // blue-500
-    "#F59E0B", // amber-500
-    "#8B5CF6", // violet-500
-    "#14B8A6", // teal-500
-    "#F97316", // orange-500
-    "#22C55E", // green-500
-    "#E11D48", // rose-600
-    "#0EA5E9", // sky-500
-    "#A855F7", // purple-500
-    "#84CC16", // lime-500
-    "#06B6D4", // cyan-500
-    "#F43F5E", // rose-500
-    "#D946EF", // fuchsia-500
-  ];
-  const hashLabel = (s: string) => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
-    return Math.abs(h);
-  };
-  const colorFor = (label?: string) => palette[(hashLabel(label || "") % palette.length)];
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const [metrics, setMetrics] = useState<{ offsetX: number; offsetY: number; scaleX: number; scaleY: number } | null>(null);
-
-  const computeMetrics = () => {
-    const cont = containerRef.current;
-    const img = imgRef.current;
-    if (!cont || !img) return;
-    const contRect = cont.getBoundingClientRect();
-    const imgRect = img.getBoundingClientRect();
-    const naturalW = img.naturalWidth || 0;
-    const naturalH = img.naturalHeight || 0;
-    if (!naturalW || !naturalH) return;
-    const offsetX = (contRect.width - imgRect.width) / 2;
-    const offsetY = (contRect.height - imgRect.height) / 2;
-    const scaleX = imgRect.width / naturalW;
-    const scaleY = imgRect.height / naturalH;
-    setMetrics({ offsetX, offsetY, scaleX, scaleY });
-  };
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    computeMetrics();
-    const onResize = () => computeMetrics();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageUrl]);
+    const canvas = canvasRef.current;
+    if (!canvas || !imageUrl) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // Draw base image at natural resolution
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      // Make stroke look ~2 CSS px after canvas scaling
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = rect.width / canvas.width || 1;
+      const targetCssStroke = 2;
+      const deviceStroke = Math.max(1, targetCssStroke / scaleX);
+      ctx.lineWidth = deviceStroke;
+
+      // Font size scaled so text remains ~12 CSS px after canvas scaling
+      const targetCssFont = 12; // px
+      const deviceFont = Math.max(8, Math.round(targetCssFont / scaleX));
+
+      // Draw detections in natural pixel coords
+      if (detections.length > 0) {
+        detections.forEach((det) => {
+          const { label, score } = det;
+          const { xmin, ymin, xmax, ymax } = det.box;
+          const x = xmin;
+          const y = ymin;
+          const w = Math.max(0, xmax - xmin);
+          const h = Math.max(0, ymax - ymin);
+          const color = colorFor(label);
+
+          ctx.strokeStyle = color;
+          ctx.strokeRect(x, y, w, h);
+
+          // Label chip
+          const text = `${label}${score !== undefined ? ` ${score.toFixed(2)}` : ""}`.trim();
+          if (text) {
+            ctx.font = `${deviceFont}px sans-serif`;
+            ctx.textBaseline = "top";
+            const paddingX = Math.max(2, Math.round(6 / scaleX));
+            const paddingY = Math.max(1, Math.round(3 / scaleX));
+            const textW = ctx.measureText(text).width;
+            const rectW = textW + paddingX * 2;
+            const rectH = deviceFont + paddingY * 2;
+            const labelX = x;
+            const labelY = Math.max(0, y - rectH - 2);
+            ctx.fillStyle = color;
+            ctx.fillRect(labelX, labelY, rectW, rectH);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(text, labelX + paddingX, labelY + paddingY);
+          }
+        });
+      }
+    };
+    img.src = imageUrl;
+  }, [imageUrl, detections]);
+
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <div className={`relative w-full h-full max-w-[520px] max-h-[60vh] border rounded-md bg-white/50 dark:bg-black/30 flex items-center justify-center`}>
+      <div className="relative w-full h-full max-w-[520px] max-h-[60vh] border rounded-md bg-white/50 dark:bg-black/30 flex items-center justify-center">
         {imageUrl ? (
-          <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
-            <img
-              ref={imgRef}
-              src={imageUrl}
-              alt="result preview"
-              className="max-h-full max-w-full object-contain object-center rounded-md shadow-sm"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
-              onLoad={computeMetrics}
+          <div className="relative w-full h-full flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              className="max-h-full max-w-full rounded-md shadow-sm"
+              aria-label="Detection result"
             />
-            {/* Draw bounding boxes if detections exist */}
-            {Array.isArray(detections) && detections.length > 0 && metrics && (
-              <div className="absolute inset-0 pointer-events-none">
-                {detections.map((det, i) => {
-                  const box = det.box || det.bbox || det.bounding_box;
-                  const label = det.label || det.class || det.name;
-                  const score = det.score || det.confidence;
-                  if (!box) return null;
-                  // Support both [x, y, w, h] and {x, y, w, h}
-                  let x: number, y: number, w: number, h: number;
-                  if (Array.isArray(box)) {
-                    [x, y, w, h] = box as [number, number, number, number];
-                  } else if ("xmin" in box) {
-                    const xmin = box.xmin as number;
-                    const ymin = box.ymin as number;
-                    const xmax = box.xmax as number;
-                    const ymax = box.ymax as number;
-                    x = xmin; y = ymin; w = xmax - xmin; h = ymax - ymin;
-                  } else {
-                    ({ x, y, w, h } = box as { x: number; y: number; w: number; h: number });
-                  }
-                  const left = metrics.offsetX + x * metrics.scaleX;
-                  const top = metrics.offsetY + y * metrics.scaleY;
-                  const width = Math.max(0, w * metrics.scaleX);
-                  const height = Math.max(0, h * metrics.scaleY);
-                  const color = colorFor(label);
-                  return (
-                    <div
-                      key={i}
-                      className="absolute rounded"
-                      style={{
-                        left,
-                        top,
-                        width,
-                        height,
-                        border: `2px solid ${color}`,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <div
-                        className="absolute left-0 top-0 text-white text-[11px] leading-none px-1.5 py-0.5 rounded-sm shadow"
-                        style={{ backgroundColor: color, transform: "translateY(-100%)" }}
-                      >
-                        {label} {score !== undefined ? score.toFixed(2) : ""}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             {loading && (
               <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                 <div aria-label="Loading" className="h-10 w-10 rounded-full border-4 border-white/60 border-t-orange-400 animate-spin"></div>
