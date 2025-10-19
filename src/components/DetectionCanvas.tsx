@@ -53,12 +53,10 @@ export default function DetectionCanvas({ imageUrl, detections, loading }: Props
           const { xmin, ymin, xmax, ymax } = det.box;
           const x = xmin;
           const y = ymin;
-          const w = Math.max(0, xmax - xmin);
-          const h = Math.max(0, ymax - ymin);
           const color = colorFor(label);
 
           ctx.strokeStyle = color;
-          ctx.strokeRect(x, y, w, h);
+          ctx.strokeRect(x, y, Math.max(0, xmax - xmin), Math.max(0, ymax - ymin));
 
           // Label chip
           const text = `${label}${score !== undefined ? ` ${score.toFixed(2)}` : ""}`.trim();
@@ -76,6 +74,9 @@ export default function DetectionCanvas({ imageUrl, detections, loading }: Props
             ctx.fillRect(labelX, labelY, rectW, rectH);
             ctx.fillStyle = "#ffffff";
             ctx.fillText(text, labelX + paddingX, labelY + paddingY);
+
+            // ctx.fillStyle = color; 
+            // ctx.fillText(text, x, Math.max(0, y - deviceFont));
           }
         });
       }
