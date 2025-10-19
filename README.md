@@ -44,4 +44,5 @@ Open `http://localhost:3000`.
 - No hard-coded secrets; requires `HF_API_KEY`.
 - Cold starts/queued responses from HF are forwarded as-is.
 - This demo focuses on clarity over heavy abstractions.
+- Copy .env.example to .env.local and fill HF_API_KEY.
 
