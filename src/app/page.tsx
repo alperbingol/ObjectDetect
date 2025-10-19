@@ -13,6 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [history, setHistory] = useState<Array<{ url: string; threshold: number }>>([]);
 
   useEffect(() => {
     if (!file) {
@@ -43,8 +44,13 @@ export default function Home() {
 
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error(data?.error ?? "Detection failed");
-      console.log("data:", data)
       setDetections(data);
+      // Save recent upload entry (non-persistent; cleared on refresh)
+      // We intentionally do not revoke this URL so the thumbnail remains visible until page refresh
+      if (file) {
+        const entryUrl = URL.createObjectURL(file);
+        setHistory((prev) => [{ url: entryUrl, threshold }, ...prev].slice(0, 8));
+      }
     } catch (e: any) {
       setError(e?.message ?? "Detection failed");
     } finally {
@@ -118,6 +124,38 @@ export default function Home() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        {/* Recent uploads (non-persistent) */}
+        <section className="md:col-span-2">
+          <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Examples</div>
+          <div className="w-full overflow-x-auto border rounded-md bg-white/50 dark:bg-black/30">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-600">
+                  <th className="p-3">Upload Image</th>
+                  <th className="p-3">Confidence threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.length === 0 ? (
+                  <tr>
+                    <td className="p-3 text-gray-400" colSpan={2}>No recent examples</td>
+                  </tr>
+                ) : (
+                  history.map((h, i) => (
+                    <tr key={i} className="border-t border-gray-200/60">
+                      <td className="p-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={h.url} alt="Recent upload" className="h-16 w-16 object-cover rounded" />
+                      </td>
+                      <td className="p-3 align-middle">{h.threshold.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
       </main>
