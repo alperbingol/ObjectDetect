@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Resaro – Object Detection Demo (Next.js)
 
-## Getting Started
+Simple image object detection with a clean React/Next.js app and a Hugging Face model.
 
-First, run the development server:
+### Stack
+- Next.js App Router
+- Canvas overlay for drawing results
+- Server Route calling HF DETR (`facebook/detr-resnet-50`)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Setup
+1) Create `.env.local` in the project root:
 ```
+HF_API_KEY=hf_...
+```
+2) Install & run:
+```
+npm install
+npm run dev
+```
+Open `http://localhost:3000`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### How it works
+- Upload image → preview with a Blob URL.
+- Click Detect → the server forwards raw image bytes to Hugging Face.
+- Server filters detections by `threshold` and returns results.
+- The client draws boxes and labels on a canvas at the image’s natural size; CSS scales it responsively.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Features worth noting
+- Canvas-based rendering: boxes and labels scale cleanly at any size.
+- Server-side threshold filtering; no API key in the client.
+- Simple, accessible UI: labeled panels, single error banner.
+- Recent Examples table (session-only) to revisit uploads.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Project structure
+- `src/app/page.tsx` – page state and layout
+- `src/app/api/detect/route.ts` – server call to HF + filtering
+- `src/components/ImageUploader.tsx` – hidden input uploader
+- `src/components/Controls.tsx` – threshold slider + actions
+- `src/components/DetectionCanvas.tsx` – canvas drawing
+- `src/components/Examples.tsx` – recent uploads table
+- `src/types/detection.ts` – HF-aligned detection type
 
-## Learn More
+### Notes
+- No hard-coded secrets; requires `HF_API_KEY`.
+- Cold starts/queued responses from HF are forwarded as-is.
+- This demo focuses on clarity over heavy abstractions.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

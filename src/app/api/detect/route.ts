@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": file.type || "image/jpeg", //file.type sadece
+        "Content-Type": file.type ,
       },
       body: file,
     });
@@ -34,10 +34,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Error calling Hugging Face API", details: String(err) }, { status: 500 });
   }
 
-  if (!Array.isArray(result)) {
-    return NextResponse.json(result, { status: response.status });
-  }
-
-  const filtered = result.filter((d: any) => typeof d?.score === "number" && d.score >= threshold);
-  return NextResponse.json(filtered, { status: 200 });
+  const isArray = Array.isArray(result);
+  const body = isArray
+    ? result.filter((d: any) => typeof d?.score === "number" && d.score >= threshold)
+    : result;
+  const status = isArray ? 200 : response.status;
+  return NextResponse.json(body, { status });
 }
