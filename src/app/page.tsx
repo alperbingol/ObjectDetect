@@ -74,6 +74,7 @@ export default function Home() {
       </header>
       <main className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <section>
+          <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Uploaded Image:</div>
           <div className={panelClass}>
             <div className={panelInnerClass}>
               <ImageUploader
@@ -102,6 +103,7 @@ export default function Home() {
         </section>
 
         <section>
+          <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Result:</div>
           <div className={panelClass}>
             <div className={panelInnerClass}>
               {previewUrl ? (
